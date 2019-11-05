@@ -5,6 +5,7 @@ pub mod utils;
 
 use assert_cmd::prelude::*;
 
+use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
@@ -239,6 +240,23 @@ fn it_builds_with_webpack_target_webworker() {
     single_env_settings! {fixture, r#"
         type = "webpack"
     "#};
+
+    build(fixture);
+    utils::cleanup(fixture);
+}
+
+#[test]
+fn it_builds_with_webpack_wasm_pack() {
+    let fixture = "webpack_wasm_pack";
+    utils::create_temporary_copy(fixture);
+
+    single_env_settings! {fixture, r#"
+        type = "webpack"
+        webpack_config = "webpack.config.js"
+    "#};
+
+    // make sure wrangler overrides WASM_PACK_PATH
+    env::set_var("WASM_PACK_PATH", "invalid_wasm_pack_path");
 
     build(fixture);
     utils::cleanup(fixture);

@@ -154,12 +154,16 @@ fn setup_build(target: &Target) -> Result<(Command, PathBuf, Bundle), failure::E
 
     let node = which::which("node").unwrap();
     let mut command = Command::new(node);
-    let wranglerjs_path = install().expect("could not install wranglerjs");
+    let wranglerjs_path = install_wranglerjs().expect("could not install wranglerjs");
     command.arg(wranglerjs_path);
-
-    //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
-    let wasm_pack_path = install::install("wasm-pack", "rustwasm")?.binary("wasm-pack")?;
-    command.env("WASM_PACK_PATH", wasm_pack_path);
+    let has_wasm_pack_plugin = true;
+    if has_wasm_pack_plugin {
+        //put path to our wasm_pack as env variable so wasm-pack-plugin can utilize it
+        let tool_name = "wasm-pack";
+        let author = "rustwasm";
+        let wasm_pack_path = install::install(tool_name, author)?.binary(tool_name)?;
+        command.env("WASM_PACK_PATH", wasm_pack_path);
+    }
 
     // create a temp file for IPC with the wranglerjs process
     let mut temp_file = env::temp_dir();
@@ -311,7 +315,7 @@ fn get_source_dir() -> PathBuf {
 }
 
 // Install {wranglerjs} from our GitHub releases
-fn install() -> Result<PathBuf, failure::Error> {
+fn install_wranglerjs() -> Result<PathBuf, failure::Error> {
     let wranglerjs_path = if install::target::DEBUG {
         let source_path = get_source_dir();
         let wranglerjs_path = source_path.join("wranglerjs");
@@ -319,8 +323,9 @@ fn install() -> Result<PathBuf, failure::Error> {
         wranglerjs_path
     } else {
         let tool_name = "wranglerjs";
+        let author = "cloudflare";
         let version = env!("CARGO_PKG_VERSION");
-        let wranglerjs_path = install::install_artifact(tool_name, "cloudflare", version)?;
+        let wranglerjs_path = install::install_artifact(tool_name, author, version)?;
         info!("wranglerjs downloaded at: {:?}", wranglerjs_path.path());
         wranglerjs_path.path()
     };
